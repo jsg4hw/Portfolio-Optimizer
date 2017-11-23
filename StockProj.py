@@ -10,67 +10,66 @@
 from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-tickers = ['AMD','AAPL']
-#tickers = ['AMD','AAPL','GE','INTC','PYPL']
+tickers = ['AMD','AAPL','GE','INTC','PYPL']
+rate = .0107
+A = []
+B = []
+
+C = np.matrix('.2; .2; .2; .2; .2', dtype=float)
+IR=np.matrix(rate, dtype=float)
+
 for t in tickers:
 ##calls the API to get the data for the given ticker
 #ticker=input('Enter ticker symbol: ')
     ts = TimeSeries(key='9KNGZS8C0M32Y3LG',output_format='pandas')
     data,meta_data =ts.get_daily(symbol=t,outputsize='compact')
-    #data,meta_data =ts.get_daily(symbol='AMD',outputsize='compact')
 
     ##round about way but imports data as a DataFrame to allow me to turn it into a list, then an array next
     df = pd.DataFrame(data,columns=['date','open','high','low','close','volume'], dtype=np.float)
-    #df=np.array(data[], dtype=np.float)
 
     #data.to_csv('dataframe.csv',header=['open','high','low','close','volume'], index=None,sep=',', mode='w',line_terminator='\n')
-
-    #data.describe()
-    #print(data)
-
-    #listo=df.reset_index().values
-    #listo=np.array(listo[0:30,3], dtype=np.float)
-
-    #listo=df[0:25,['close']]
-    # listo=df['close'].reset_index().values
-    #listo=df.values.array([0:25,3],dtype=np.float)
-
-
-
     #days=int(input(('Enter previous days return to calculate: '))
 
-    #a#ssigns the dataframe as a csv for easier data manipulation offline and less time for the call
-    #df = pd.read_csv('dataframe.csv')
+    ##assigns the dataframe as a csv for easier data manipulation offline and less time for the call
+
     ##isolates the "close" prices column for 25 days of returns
-    listo=df.values[0:25,3]
-    #listo.astype(float)
+    listo=df.values[0:29,3]
+
     ##reverses the order of the array to correctly calculate the pct_change
     listochron=np.flipud(listo)
-
-    print(type(df))
-    print(listo)
-    print(listochron)
-    print(listo.shape)
 
     ##calculates percentage change of the returns on a daily basis, the average of those, and the std. dev
     pct_change = np.diff(listochron) / listochron[:1]
     expec_return=np.mean(pct_change)
     std_return=np.std(pct_change)
-    sharpe=(expec_return/std_return)
 
-    print('expec_return of ' + t + '=')
-    print(expec_return)
-    print('std_return of ' + t + '=')
-    print(std_return)
+    A.append(expec_return)
+    B.append(std_return)
+    matA=np.matrix(A, dtype=float)
+    #print(matA,matA.shape)
+    matB=np.matrix(B, dtype=float)
+    #print(matB,matB.shape)
 
+reward=np.dot(matA,C)
+print(matA)
+risk=np.dot(matB,C)
+print(matB)
+adj_reward=reward-IR
+#print(adj_reward.shape)
 
-    ##MATRIX OPS
+#sharpemat=(int(np.dot(matA,C))-rate)/int((np.dot(matB,C)).getI())
+sharpemat=np.dot((reward-IR),risk.getI())
+print(type(sharpemat))
+print(sharpemat)
+sharpematDF=pd.DataFrame(sharpemat)
 
-    A = [[]]
-    np.concatenate((A,[[expec_return]]),1)
-    B = [[]]
-    np.concatenate((B,[[std_return]]),1)
-    C = np.matrix('.1 .1 .1 .1 .1 .1 .1 .1 .1 .1')
+"""plt.plot(x=adj_reward, y=risk, title='Sharpe Ratio')
+plt.plot(x=matA,y=matB,title='Sharpe Ratio')
+plt.xlabel('Standard Deviation')
+plt.ylabel('Expected Return')
+plt.axis([0,1,0,2])
+#plt.show()
 
-    print(A,B,C)
+#print(sharpemat)"""
