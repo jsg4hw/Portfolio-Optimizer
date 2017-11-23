@@ -1,0 +1,33 @@
+import pandas as pd
+import numpy as np
+from cvxpy import *
+
+rate = .0107
+IR=np.matrix(rate, dtype=float)
+C = np.matrix('.2; .2; .2; .2; .2', dtype=float)
+matA=np.matrix([[-0.00073813, -0.0036063, 0.00280057, -0.00256375, -0.00326737]])
+#print(matA,matA.shape)
+matB=np.matrix([[0.02755802, 0.01413884, 0.01403934, 0.0059572, 0.00985212]])
+#print(matB,matB.shape)
+
+reward=np.dot(matA,C)
+print(type(matA))
+print(matA)
+risk=np.dot(matB,C)
+print(matB)
+adj_reward=reward-IR
+#print(adj_reward.shape)
+
+#sharpemat=(int(np.dot(matA,C))-rate)/int((np.dot(matB,C)).getI())
+sharpemat=np.dot((reward-IR),risk.getI())
+print(type(sharpemat))
+print(sharpemat)
+sharpematDF=pd.DataFrame(sharpemat)
+
+D = Variable(5)
+objective = Maximize(((matA*D)-rate)*(np.linalg.inv(np.dot(matB,D))))
+constraints = [0<=D, D<=1]
+prob = Problem(objective,constraints)
+
+print('optimal value', prob.solve())
+print(D.value)
