@@ -2,30 +2,44 @@ import pandas as pd
 import numpy as np
 from cvxpy import *
 
+##sets the risk-free rate (currently 3-mo. T-bill)
 rate = .0107
 IR=np.matrix(rate, dtype=float)
+
+##the entries in C represent the asset allocations, hence 20% to start for one of 5
 C = np.matrix('.2; .2; .2; .2; .2', dtype=float)
+
+#the entries in matA represent the mean daily returns over a 30-day period
 matA=np.matrix([[-0.00073813, -0.0036063, 0.00280057, -0.00256375, -0.00326737]])
-#print(matA,matA.shape)
+
+#std deviation of those daily returns 
 matB=np.matrix([[0.02755802, 0.01413884, 0.01403934, 0.0059572, 0.00985212]])
-#print(matB,matB.shape)
 
+#dot product of the returns of each asset and its respective allocation in the portfolio
 reward=np.dot(matA,C)
-print(type(matA))
-print(matA)
-risk=np.dot(matB,C)
-print(matB)
-adj_reward=reward-IR
-#print(adj_reward.shape)
 
+#dot product of the standard deviation of each assets's returns and its respective allocation in the portfolio
+risk=np.dot(matB,C)
+
+#the return of the portfolio minus the risk free rate -- both in matrix format
+adj_reward=reward-IR
+
+##disregard for now
 #sharpemat=(int(np.dot(matA,C))-rate)/int((np.dot(matB,C)).getI())
+
+#sharpe matrix = expected return of portfolio less the risk-free rate multiplied by the inverse of the standard deviation of the portfolio
 sharpemat=np.dot((reward-IR),risk.getI())
-print(type(sharpemat))
-print(sharpemat)
+
 sharpematDF=pd.DataFrame(sharpemat)
 
+##OPTIMIZATION PORTION
+#sets a variable that is set to be optimized, an array with 5 entries
 D = Variable(5)
+
+#switched to np.linalg.inv because .getI() earlier was giving me some trouble earlier
 objective = Maximize(((matA*D)-rate)*(np.linalg.inv(np.dot(matB,D))))
+
+#don't want the asset allocations to be less than 0% or greater than 100% of the portfolio
 constraints = [0<=D, D<=1]
 prob = Problem(objective,constraints)
 
